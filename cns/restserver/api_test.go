@@ -826,7 +826,7 @@ func TestGetHomeAzInfo_UnsupportedHttpMethod(t *testing.T) {
 		err error
 		req *http.Request
 	)
-	req, err = http.NewRequest(http.MethodPost, cns.GetHomeAzInfo, nil)
+	req, err = http.NewRequest(http.MethodPost, cns.GetHomeAzInfo, http.NoBody)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -840,7 +840,6 @@ func TestGetHomeAzInfo_UnsupportedHttpMethod(t *testing.T) {
 		t.Errorf("GetHomeAzInfo not failing to unsupported http method with response %+v", getHomeAzInfoResponse)
 	}
 	fmt.Printf("GetHomeAzInfo Responded with %+v\n", getHomeAzInfoResponse)
-
 }
 
 func TestGetHomeAzInfo_With_NmAgentSupportedApisError(t *testing.T) {
@@ -849,7 +848,7 @@ func TestGetHomeAzInfo_With_NmAgentSupportedApisError(t *testing.T) {
 		err error
 		req *http.Request
 	)
-	req, err = http.NewRequest(http.MethodGet, cns.GetHomeAzInfo, nil)
+	req, err = http.NewRequest(http.MethodGet, cns.GetHomeAzInfo, http.NoBody)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -863,7 +862,6 @@ func TestGetHomeAzInfo_With_NmAgentSupportedApisError(t *testing.T) {
 		t.Errorf("GetHomeAzInfo not faild to NmAgentSupportedApisError with response %+v", getHomeAzInfoResponse)
 	}
 	fmt.Printf("GetHomeAzInfo Responded with %+v\n", getHomeAzInfoResponse)
-
 }
 
 func TestCreateHostNCApipaEndpoint(t *testing.T) {

@@ -8,6 +8,7 @@ package fakes
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/Azure/azure-container-networking/cns/nmagent"
 )
@@ -15,9 +16,14 @@ import (
 // NMAgentClientFake can be used to query to VM Host info.
 type NMAgentClientFake struct {
 	GetNCVersionListFunc func(context.Context) (*nmagent.NetworkContainerListResponse, error)
+	GetHomeAzInfoFunc    func() (*http.Response, error)
 }
 
 // GetNcVersionListWithOutToken is mock implementation to return nc version list.
 func (c *NMAgentClientFake) GetNCVersionList(ctx context.Context) (*nmagent.NetworkContainerListResponse, error) {
 	return c.GetNCVersionListFunc(ctx)
+}
+
+func (c *NMAgentClientFake) GetHomeAzInfo() (*http.Response, error) {
+	return c.GetHomeAzInfoFunc()
 }

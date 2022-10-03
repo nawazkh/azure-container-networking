@@ -3,6 +3,7 @@ package restserver
 import (
 	"context"
 	"net"
+	"net/http"
 	"sync"
 	"time"
 
@@ -41,6 +42,7 @@ type interfaceGetter interface {
 
 type nmagentClient interface {
 	GetNCVersionList(ctx context.Context) (*nmagent.NetworkContainerListResponse, error)
+	GetHomeAzInfo() (*http.Response, error)
 }
 
 // HTTPRestService represents http listener for CNS - Container Networking Service.

@@ -780,49 +780,50 @@ func (service *HTTPRestService) getHomeAzInfo(w http.ResponseWriter, r *http.Req
 
 	switch r.Method {
 	case http.MethodGet:
-		var supportedApis []string
+		var supportedAPIs []string
 		// Get NMAgent supported apis
-		supportedApis, err = nmagent.GetNmAgentSupportedApis(common.GetHttpClient(), "")
+		supportedAPIs, err = nmagent.GetNmAgentSupportedApis(common.GetHttpClient(), "")
 		if err != nil {
 			returnMessage = fmt.Sprintf("[Azure CNS] Error. getHomeAzInfo failed to get NMAgent supported Apis %v", err)
 			returnCode = types.NmAgentSupportedApisError
-		} else if isApiSupportedByNMAgent(supportedApis, "GetHomeAzInfo") { // TODO: change the api value here to align with NMAgent's api name
-			// calling NMAgent to get home AZ info
-			resp, err = nmagent.GetHomeAzInfo()
-			if err != nil {
-				returnCode = types.UnexpectedError
-				returnMessage = fmt.Sprintf("[Azure CNS] Error. getHomeAzInfo failed %v", err.Error())
-			}
 		} else {
-			returnMessage = "[Azure CNS] Error. NMAgent does not support GetHomeAzInfo api."
-			returnCode = types.NmAgentNotSupportedApiError
+			if isAPISupportedByNMAgent(supportedAPIs, "GetHomeAzInfo") { // TODO: update the api value here to align with NMAgent's api name
+				// calling NMAgent to get home AZ info
+				resp, err = service.nmagentClient.GetHomeAzInfo()
+				if err != nil {
+					returnCode = types.UnexpectedError
+					returnMessage = fmt.Sprintf("[Azure CNS] Error. getHomeAzInfo failed %v", err.Error())
+				} else {
+					defer resp.Body.Close()
+					switch resp.StatusCode {
+					case http.StatusOK:
+						b, readErr := io.ReadAll(resp.Body)
+						if readErr != nil {
+							returnMessage = fmt.Sprintf("[Azure CNS] Error. GetHomeAzInfo failed to read response body. Error: %v", readErr)
+							returnCode = types.UnexpectedError
+							logger.Errorf("[Azure-CNS] %s", returnMessage)
+						} else if err = json.Unmarshal(b, &homeAzInfo); err != nil { // TODO: cache and reuse homeAzInfo in the following PR
+							returnMessage = fmt.Sprintf("[Azure CNS] Error. GetHomeAzInfo failed to unmarshal response. Error: %v", err)
+							returnCode = types.UnexpectedError
+							logger.Errorf("[Azure-CNS] %s", returnMessage)
+						}
+					case http.StatusInternalServerError:
+						returnMessage = "[Azure CNS] Error. GetHomeAzInfo failed due to Nmagent server internal error."
+						returnCode = types.NmAgentServerInternalError
+
+					default:
+						returnMessage = fmt.Sprintf("[Azure CNS] Error. GetHomeAzInfo failed with StatusCode: %d", resp.StatusCode)
+						returnCode = types.UnexpectedError
+					}
+				}
+			} else {
+				returnMessage = "[Azure CNS] Error. NMAgent does not support GetHomeAzInfo api."
+				returnCode = types.NmAgentNotSupportedAPIError
+			}
 		}
 	default:
 		returnMessage = "[Azure CNS] Error. getHomeAzInfo did not receive a GET."
 		returnCode = types.UnsupportedVerb
-	}
-	if resp != nil {
-		defer resp.Body.Close()
-		switch resp.StatusCode {
-		case http.StatusOK:
-			b, readErr := io.ReadAll(resp.Body)
-			if readErr != nil {
-				returnMessage = fmt.Sprintf("[Azure CNS] Error. GetHomeAzInfo failed to read response body. Error: %v", readErr)
-				returnCode = types.UnexpectedError
-				logger.Errorf("[Azure-CNS] %s", returnMessage)
-			} else if err = json.Unmarshal(b, &homeAzInfo); err != nil { //TODO: cache and reuse homeAzInfo in the following PR
-				returnMessage = fmt.Sprintf("[Azure CNS] Error. GetHomeAzInfo failed to unmarshal response. Error: %v", err)
-				returnCode = types.UnexpectedError
-				logger.Errorf("[Azure-CNS] %s", returnMessage)
-			}
-		case http.StatusInternalServerError:
-			returnMessage = "[Azure CNS] Error. GetHomeAzInfo failed due to Nmagent server internal error."
-			returnCode = types.NmAgentServerInternalError
-
-		default:
-			returnMessage = fmt.Sprintf("[Azure CNS] Error. GetHomeAzInfo failed with StatusCode: %d", resp.StatusCode)
-			returnCode = types.UnexpectedError
-		}
 	}
 
 	cnsResponse := cns.Response{ReturnCode: returnCode, Message: returnMessage}
@@ -835,9 +836,9 @@ func (service *HTTPRestService) getHomeAzInfo(w http.ResponseWriter, r *http.Req
 	logger.Response(service.Name, getHomeAzInfoResponse, returnCode, serviceErr)
 }
 
-func isApiSupportedByNMAgent(supportedApis []string, api string) bool {
-	for _, supportedApi := range supportedApis {
-		if supportedApi == api {
+func isAPISupportedByNMAgent(supportedAPIs []string, api string) bool {
+	for _, supportedAPI := range supportedAPIs {
+		if supportedAPI == api {
 			return true
 		}
 	}

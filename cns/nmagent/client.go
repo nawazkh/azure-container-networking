@@ -237,12 +237,12 @@ func GetNmAgentSupportedApis(httpc *http.Client, getNmAgentSupportedApisURL stri
 	return xmlDoc.SupportedApis, nil
 }
 
-func GetHomeAzInfo() (*http.Response, error) {
+func (c *Client) GetHomeAzInfo() (*http.Response, error) {
 	var returnErr error
-	getHomeAzInfoApiURL := fmt.Sprintf(GetHomeAzInfoURLFmt, WireserverIP)
+	getHomeAzInfoAPIURL := fmt.Sprintf(GetHomeAzInfoURLFmt, WireserverIP)
 	httpClient := common.GetHttpClient()
 
-	req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, getHomeAzInfoApiURL, nil)
+	req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, getHomeAzInfoAPIURL, http.NoBody)
 	if err != nil {
 		returnErr = errors.Wrap(err, "[NMAgentClient] GetHomeAzInfo failed to build nmagent request in getting home AZ info")
 		logger.Errorf("[Azure-CNS] %v", returnErr)
