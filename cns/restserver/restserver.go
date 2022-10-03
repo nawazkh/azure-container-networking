@@ -224,6 +224,7 @@ func (service *HTTPRestService) Init(config *common.ServiceConfig) error {
 	listener.AddHandler(cns.PathDebugPodContext, service.handleDebugPodContext)
 	listener.AddHandler(cns.PathDebugRestData, service.handleDebugRestData)
 	listener.AddHandler(cns.NetworkContainersURLPath, service.getOrRefreshNetworkContainers)
+	listener.AddHandler(cns.GetHomeAzInfo, service.getHomeAzInfo)
 
 	// handlers for v0.2
 	listener.AddHandler(cns.V2Prefix+cns.SetEnvironmentPath, service.setEnvironment)
@@ -247,6 +248,7 @@ func (service *HTTPRestService) Init(config *common.ServiceConfig) error {
 	listener.AddHandler(cns.V2Prefix+cns.CreateHostNCApipaEndpointPath, service.createHostNCApipaEndpoint)
 	listener.AddHandler(cns.V2Prefix+cns.DeleteHostNCApipaEndpointPath, service.deleteHostNCApipaEndpoint)
 	listener.AddHandler(cns.V2Prefix+cns.NmAgentSupportedApisPath, service.nmAgentSupportedApisHandler)
+	listener.AddHandler(cns.V2Prefix+cns.GetHomeAzInfo, service.getHomeAzInfo)
 
 	// Initialize HTTP client to be reused in CNS
 	connectionTimeout, _ := service.GetOption(acn.OptHttpConnectionTimeout).(int)

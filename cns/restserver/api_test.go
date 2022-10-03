@@ -820,6 +820,52 @@ func TestNmAgentSupportedApisHandler(t *testing.T) {
 	fmt.Printf("nmAgentSupportedApisHandler Responded with %+v\n", nmAgentSupportedApisResponse)
 }
 
+func TestGetHomeAzInfo_UnsupportedHttpMethod(t *testing.T) {
+	fmt.Println("Test: GetHomeAzInfoHandler_UnsupportedHttpMethod")
+	var (
+		err error
+		req *http.Request
+	)
+	req, err = http.NewRequest(http.MethodPost, cns.GetHomeAzInfo, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	var getHomeAzInfoResponse cns.GetHomeAzInfoResponse
+	err = decodeResponse(w, &getHomeAzInfoResponse)
+	if err != nil && getHomeAzInfoResponse.Response.ReturnCode != 21 {
+		t.Errorf("GetHomeAzInfo not failing to unsupported http method with response %+v", getHomeAzInfoResponse)
+	}
+	fmt.Printf("GetHomeAzInfo Responded with %+v\n", getHomeAzInfoResponse)
+
+}
+
+func TestGetHomeAzInfo_With_NmAgentSupportedApisError(t *testing.T) {
+	fmt.Println("Test: GetHomeAzInfoHandle_With_NmAgentSupportedApisError")
+	var (
+		err error
+		req *http.Request
+	)
+	req, err = http.NewRequest(http.MethodGet, cns.GetHomeAzInfo, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	var getHomeAzInfoResponse cns.GetHomeAzInfoResponse
+	err = decodeResponse(w, &getHomeAzInfoResponse)
+	if err != nil && getHomeAzInfoResponse.Response.ReturnCode != 37 { // NmAgentSupportedApisError code
+		t.Errorf("GetHomeAzInfo not faild to NmAgentSupportedApisError with response %+v", getHomeAzInfoResponse)
+	}
+	fmt.Printf("GetHomeAzInfo Responded with %+v\n", getHomeAzInfoResponse)
+
+}
+
 func TestCreateHostNCApipaEndpoint(t *testing.T) {
 	fmt.Println("Test: createHostNCApipaEndpoint")
 

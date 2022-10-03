@@ -19,6 +19,7 @@ import (
 const (
 	// GetNmAgentSupportedApiURLFmt Api endpoint to get supported Apis of NMAgent
 	GetNmAgentSupportedApiURLFmt       = "http://%s/machine/plugins/?comp=nmagent&type=GetSupportedApis"
+	GetHomeAzInfoURLFmt                = "http://%s/machine/plugins/?comp=nmagent&type=GetHomeAzInfo"
 	GetNetworkContainerVersionURLFmt   = "http://%s/machine/plugins/?comp=nmagent&type=NetworkManagement/interfaces/%s/networkContainers/%s/version/authenticationToken/%s/api-version/1"
 	GetNcVersionListWithOutTokenURLFmt = "http://%s/machine/plugins/?comp=nmagent&type=NetworkManagement/interfaces/api-version/%s"
 	JoinNetworkURLFmt                  = "NetworkManagement/joinedVirtualNetworks/%s/api-version/1"
@@ -234,6 +235,30 @@ func GetNmAgentSupportedApis(httpc *http.Client, getNmAgentSupportedApisURL stri
 
 	logger.Printf("[NMAgentClient][Response] GetNmAgentSupportedApis. Response: %+v.", resp)
 	return xmlDoc.SupportedApis, nil
+}
+
+func GetHomeAzInfo() (*http.Response, error) {
+	var returnErr error
+	getHomeAzInfoApiURL := fmt.Sprintf(GetHomeAzInfoURLFmt, WireserverIP)
+	httpClient := common.GetHttpClient()
+
+	req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, getHomeAzInfoApiURL, nil)
+	if err != nil {
+		returnErr = errors.Wrap(err, "[NMAgentClient] GetHomeAzInfo failed to build nmagent request in getting home AZ info")
+		logger.Errorf("[Azure-CNS] %v", returnErr)
+		return nil, returnErr
+	}
+
+	var resp *http.Response
+	resp, err = httpClient.Do(req)
+	if err != nil {
+		returnErr = errors.Wrap(err, "[NMAgentClient] failed to make nmagent request in getting home AZ info")
+		logger.Errorf("[Azure-CNS] %v", returnErr)
+		return nil, returnErr
+	}
+
+	logger.Printf("[NMAgentClient][Response] GetHomeAzInfo. Response: %+v.", resp)
+	return resp, nil
 }
 
 // GetNCVersionList query nmagent for programmed container versions.

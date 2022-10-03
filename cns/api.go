@@ -283,6 +283,11 @@ type IpamPoolMonitorStateSnapshot struct {
 	CachedNNC                v1alpha.NodeNetworkConfig
 }
 
+type HomeAzInfo struct {
+	HomeAz     string
+	DcmtRegion string
+}
+
 // Response describes generic response from CNS.
 type Response struct {
 	ReturnCode types.ResponseCode
@@ -334,4 +339,9 @@ type NmAgentSupportedApisRequest struct {
 type NmAgentSupportedApisResponse struct {
 	Response      Response
 	SupportedApis []string
+}
+
+type GetHomeAzInfoResponse struct {
+	Response   Response
+	HomeAzInfo HomeAzInfo
 }
