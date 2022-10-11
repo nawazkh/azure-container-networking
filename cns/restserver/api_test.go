@@ -826,7 +826,7 @@ func TestGetHomeAzInfo_UnsupportedHttpMethod(t *testing.T) {
 		err error
 		req *http.Request
 	)
-	req, err = http.NewRequest(http.MethodPost, cns.GetHomeAzInfo, http.NoBody)
+	req, err = http.NewRequestWithContext(context.TODO(), http.MethodPost, cns.GetHomeAzInfo, http.NoBody)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -842,13 +842,13 @@ func TestGetHomeAzInfo_UnsupportedHttpMethod(t *testing.T) {
 	fmt.Printf("GetHomeAzInfo Responded with %+v\n", getHomeAzInfoResponse)
 }
 
-func TestGetHomeAzInfo_With_NmAgentSupportedApisError(t *testing.T) {
-	fmt.Println("Test: GetHomeAzInfoHandle_With_NmAgentSupportedApisError")
+func TestGetHomeAzInfo_With_NmAgentSupportedAPIsError(t *testing.T) {
+	fmt.Println("Test: GetHomeAzInfoHandle_With_NmAgentSupportedAPIsError")
 	var (
 		err error
 		req *http.Request
 	)
-	req, err = http.NewRequest(http.MethodGet, cns.GetHomeAzInfo, http.NoBody)
+	req, err = http.NewRequestWithContext(context.TODO(), http.MethodGet, cns.GetHomeAzInfo, http.NoBody)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -858,8 +858,8 @@ func TestGetHomeAzInfo_With_NmAgentSupportedApisError(t *testing.T) {
 
 	var getHomeAzInfoResponse cns.GetHomeAzInfoResponse
 	err = decodeResponse(w, &getHomeAzInfoResponse)
-	if err != nil && getHomeAzInfoResponse.Response.ReturnCode != 37 { // NmAgentSupportedApisError code
-		t.Errorf("GetHomeAzInfo not faild to NmAgentSupportedApisError with response %+v", getHomeAzInfoResponse)
+	if err != nil && getHomeAzInfoResponse.Response.ReturnCode != 37 { // NmAgentSupportedAPIsError code
+		t.Errorf("GetHomeAzInfo not faild to NmAgentSupportedAPIsError with response %+v", getHomeAzInfoResponse)
 	}
 	fmt.Printf("GetHomeAzInfo Responded with %+v\n", getHomeAzInfoResponse)
 }
