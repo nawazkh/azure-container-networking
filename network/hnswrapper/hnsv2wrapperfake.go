@@ -331,30 +331,6 @@ func (fCache FakeHNSCache) SetPolicy(setID string) *hcn.SetPolicySetting {
 	return nil
 }
 
-// StrictlyHasSetPolicies is true if the network exists and has all the SetPolicies and no others.
-func (fCache FakeHNSCache) StrictlyHasSetPolicies(networkID string, setIDs []string) bool {
-	for _, network := range fCache.networks {
-		if network.ID == networkID {
-			for _, setID := range setIDs {
-				hasPolicy := false
-				for _, policy := range network.Policies {
-					if policy.Id == setID {
-						hasPolicy = true
-						break
-					}
-				}
-
-				if !hasPolicy {
-					return false
-				}
-			}
-
-			return len(network.Policies) == len(setIDs)
-		}
-	}
-	return false
-}
-
 func (fCache FakeHNSCache) PrettyString() string {
 	var networkStrings []string
 	for _, network := range fCache.networks {
@@ -369,7 +345,21 @@ func (fCache FakeHNSCache) PrettyString() string {
 	return fmt.Sprintf("networks: [%s]\nendpoints: [%s]", strings.Join(networkStrings, ","), strings.Join(endpointStrings, ","))
 }
 
-// ACLPolicies returns a map of the inputed Endpoint IDs to Policies with the given policyID
+// AllSetPolicies returns all SetPolicies in a given network as a map of SetPolicy ID to SetPolicy object.
+func (fCache FakeHNSCache) AllSetPolicies(networkID string) map[string]*hcn.SetPolicySetting {
+	setPolicies := make(map[string]*hcn.SetPolicySetting)
+	for _, network := range fCache.networks {
+		if network.ID == networkID {
+			for _, setPolicy := range network.Policies {
+				setPolicies[setPolicy.Id] = setPolicy
+			}
+			break
+		}
+	}
+	return setPolicies
+}
+
+// ACLPolicies returns a map of the inputed Endpoint IDs to Policies with the given policyID.
 func (fCache FakeHNSCache) ACLPolicies(epList map[string]string, policyID string) (map[string][]*FakeEndpointPolicy, error) {
 	aclPols := make(map[string][]*FakeEndpointPolicy)
 	for ip, epID := range epList {
@@ -438,6 +428,7 @@ func (fNetwork *FakeHostComputeNetwork) GetHCNObj() *hcn.HostComputeNetwork {
 	return &hcn.HostComputeNetwork{
 		Id:   fNetwork.ID,
 		Name: fNetwork.Name,
+		// FIXME need to include SetPolicies
 	}
 }
 
@@ -476,6 +467,13 @@ func (fEndpoint *FakeHostComputeEndpoint) GetHCNObj() *hcn.HostComputeEndpoint {
 		Id:                 fEndpoint.ID,
 		Name:               fEndpoint.Name,
 		HostComputeNetwork: fEndpoint.HostComputeNetwork,
+		IpConfigurations: []hcn.IpConfig{
+			{
+				IpAddress: fEndpoint.IPConfiguration,
+			},
+		},
+		// FIXME transfer policies with JSON marshalling
+		Policies: []hcn.EndpointPolicy{},
 	}
 }
 
