@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	nma "github.com/Azure/azure-container-networking/nmagent"
+
 	"github.com/Azure/azure-container-networking/cns"
 	"github.com/Azure/azure-container-networking/cns/common"
 	"github.com/Azure/azure-container-networking/cns/dockerclient"
@@ -39,10 +41,16 @@ var (
 type interfaceGetter interface {
 	GetInterfaces(ctx context.Context) (*wireserver.GetInterfacesResult, error)
 }
-
+type NodeInquirer interface {
+	GetHomeAzInfo(ctx context.Context) (nma.HomeAzInfo, error)
+}
+type NmagentMultiClient struct {
+	OldClient nmagentClient
+	NewClient NodeInquirer
+}
 type nmagentClient interface {
 	GetNCVersionList(ctx context.Context) (*nmagent.NetworkContainerListResponse, error)
-	GetHomeAzInfo() (*http.Response, error)
+	GetNmAgentSupportedApis(httpc *http.Client, getNmAgentSupportedApisURL string) ([]string, error)
 }
 
 // HTTPRestService represents http listener for CNS - Container Networking Service.
@@ -51,7 +59,7 @@ type HTTPRestService struct {
 	dockerClient             *dockerclient.Client
 	wscli                    interfaceGetter
 	ipamClient               *ipamclient.IpamClient
-	nmagentClient            nmagentClient
+	nmagentMultiClient       NmagentMultiClient
 	networkContainer         *networkcontainers.NetworkContainers
 	PodIPIDByPodInterfaceKey map[string]string                    // PodInterfaceId is key and value is Pod IP (SecondaryIP) uuid.
 	PodIPConfigState         map[string]cns.IPConfigurationStatus // Secondary IP ID(uuid) is key
@@ -125,7 +133,7 @@ type networkInfo struct {
 }
 
 // NewHTTPRestService creates a new HTTP Service object.
-func NewHTTPRestService(config *common.ServiceConfig, wscli interfaceGetter, nmagentClient nmagentClient, endpointStateStore store.KeyValueStore) (cns.HTTPService, error) {
+func NewHTTPRestService(config *common.ServiceConfig, wscli interfaceGetter, nmagentMultiClient NmagentMultiClient, endpointStateStore store.KeyValueStore) (cns.HTTPService, error) {
 	service, err := cns.NewService(config.Name, config.Version, config.ChannelMode, config.Store)
 	if err != nil {
 		return nil, err
@@ -167,7 +175,7 @@ func NewHTTPRestService(config *common.ServiceConfig, wscli interfaceGetter, nma
 		dockerClient:             dc,
 		wscli:                    wscli,
 		ipamClient:               ic,
-		nmagentClient:            nmagentClient,
+		nmagentMultiClient:       nmagentMultiClient,
 		networkContainer:         nc,
 		PodIPIDByPodInterfaceKey: podIPIDByPodInterfaceKey,
 		PodIPConfigState:         podIPConfigState,

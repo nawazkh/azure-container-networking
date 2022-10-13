@@ -154,6 +154,33 @@ func (c *Client) DeleteNetworkContainer(ctx context.Context, dcr DeleteContainer
 	return nil
 }
 
+// GetHomeAzInfo gets node's home az info from nmagent
+func (c *Client) GetHomeAzInfo(ctx context.Context) (HomeAzInfo, error) {
+	getHomeAzInfoRequest := &GetHomeAzInfoRequest{}
+	var out HomeAzInfo
+	req, err := c.buildRequest(ctx, getHomeAzInfoRequest)
+	if err != nil {
+		return out, errors.Wrap(err, "building request")
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return out, errors.Wrap(err, "submitting request")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return out, die(resp.StatusCode, resp.Header, resp.Body)
+	}
+
+	err = json.NewDecoder(resp.Body).Decode(&out)
+	if err != nil {
+		return out, errors.Wrap(err, "decoding response")
+	}
+
+	return out, nil
+}
+
 func die(code int, headers http.Header, body io.ReadCloser) error {
 	// nolint:errcheck // make a best effort to return whatever information we can
 	// returning an error here without the code and source would

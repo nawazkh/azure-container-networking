@@ -19,3 +19,8 @@ type Tag struct {
 	Name string `json:"name"`
 	Type string `json:"type"` // the type of the tag (e.g. "System" or "Custom")
 }
+
+type HomeAzInfo struct {
+	HomeAz     string
+	DcmtRegion string
+}

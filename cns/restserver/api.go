@@ -5,7 +5,6 @@ package restserver
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -22,6 +21,7 @@ import (
 	"github.com/Azure/azure-container-networking/cns/types"
 	"github.com/Azure/azure-container-networking/cns/wireserver"
 	"github.com/Azure/azure-container-networking/common"
+	nma "github.com/Azure/azure-container-networking/nmagent"
 	"github.com/Azure/azure-container-networking/platform"
 	"github.com/pkg/errors"
 )
@@ -769,51 +769,42 @@ func (service *HTTPRestService) setOrchestratorType(w http.ResponseWriter, r *ht
 func (service *HTTPRestService) getHomeAzInfo(w http.ResponseWriter, r *http.Request) {
 	logger.Printf("[Azure CNS] getHomeAzInfo")
 	logger.Request(service.Name, " getHomeAzInfo", nil)
+	ctx := r.Context()
 
 	var (
 		returnCode    types.ResponseCode
 		returnMessage string
 		err           error
-		resp          *http.Response
-		homeAzInfo    cns.HomeAzInfo
+		homeAzInfo    nma.HomeAzInfo
 	)
 
 	switch r.Method {
 	case http.MethodGet:
 		var supportedAPIs []string
 		// Get NMAgent supported apis
-		supportedAPIs, err = nmagent.GetNmAgentSupportedApis(common.GetHttpClient(), "")
+		supportedAPIs, err = service.nmagentMultiClient.OldClient.GetNmAgentSupportedApis(common.GetHttpClient(), "")
 		if err != nil {
 			returnMessage = fmt.Sprintf("[Azure CNS] Error. getHomeAzInfo failed to get NMAgent supported Apis %v", err)
 			returnCode = types.NmAgentSupportedApisError
 		} else {
 			if isAPISupportedByNMAgent(supportedAPIs, "GetHomeAzInfo") { // TODO: update the api value here to align with NMAgent's api name
 				// calling NMAgent to get home AZ info
-				resp, err = service.nmagentClient.GetHomeAzInfo()
+				homeAzInfo, err = service.nmagentMultiClient.NewClient.GetHomeAzInfo(ctx)
 				if err != nil {
-					returnCode = types.UnexpectedError
-					returnMessage = fmt.Sprintf("[Azure CNS] Error. getHomeAzInfo failed %v", err.Error())
-				} else {
-					defer resp.Body.Close()
-					switch resp.StatusCode {
-					case http.StatusOK:
-						b, readErr := io.ReadAll(resp.Body)
-						if readErr != nil {
-							returnMessage = fmt.Sprintf("[Azure CNS] Error. GetHomeAzInfo failed to read response body. Error: %v", readErr)
-							returnCode = types.UnexpectedError
-							logger.Errorf("[Azure-CNS] %s", returnMessage)
-						} else if err = json.Unmarshal(b, &homeAzInfo); err != nil { // TODO: cache and reuse homeAzInfo in the following PR
-							returnMessage = fmt.Sprintf("[Azure CNS] Error. GetHomeAzInfo failed to unmarshal response. Error: %v", err)
-							returnCode = types.UnexpectedError
-							logger.Errorf("[Azure-CNS] %s", returnMessage)
-						}
-					case http.StatusInternalServerError:
-						returnMessage = "[Azure CNS] Error. GetHomeAzInfo failed due to Nmagent server internal error."
-						returnCode = types.NmAgentServerInternalError
+					apiError := nma.Error{}
+					if ok := errors.As(err, &apiError); ok {
+						switch apiError.StatusCode() {
+						case http.StatusInternalServerError:
+							returnMessage = "[Azure CNS] Error. GetHomeAzInfo failed due to Nmagent server internal error."
+							returnCode = types.NmAgentServerInternalError
 
-					default:
-						returnMessage = fmt.Sprintf("[Azure CNS] Error. GetHomeAzInfo failed with StatusCode: %d", resp.StatusCode)
+						default:
+							returnMessage = fmt.Sprintf("[Azure CNS] Error. GetHomeAzInfo failed with StatusCode: %d", apiError.StatusCode())
+							returnCode = types.UnexpectedError
+						}
+					} else {
 						returnCode = types.UnexpectedError
+						returnMessage = fmt.Sprintf("[Azure CNS] Error. getHomeAzInfo failed %v", err)
 					}
 				}
 			} else {
@@ -1562,7 +1553,7 @@ func (service *HTTPRestService) nmAgentSupportedApisHandler(w http.ResponseWrite
 
 	switch r.Method {
 	case http.MethodPost:
-		supportedApis, retErr = nmagent.GetNmAgentSupportedApis(common.GetHttpClient(),
+		supportedApis, retErr = service.nmagentMultiClient.OldClient.GetNmAgentSupportedApis(common.GetHttpClient(),
 			req.GetNmAgentSupportedApisURL)
 		if retErr != nil {
 			returnCode = types.NmAgentSupportedApisError

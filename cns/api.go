@@ -12,6 +12,7 @@ import (
 	"github.com/Azure/azure-container-networking/cns/common"
 	"github.com/Azure/azure-container-networking/cns/types"
 	"github.com/Azure/azure-container-networking/crd/nodenetworkconfig/api/v1alpha"
+	nma "github.com/Azure/azure-container-networking/nmagent"
 	"github.com/pkg/errors"
 )
 
@@ -65,6 +66,7 @@ type IPConfigurationStatus struct {
 // Equals compares a subset of the IPConfigurationStatus fields since a direct
 // DeepEquals or otherwise complete comparison of two IPConfigurationStatus objects
 // compares internal state details that don't impact their functional equality.
+//
 //nolint:gocritic // it's safer to pass this by value
 func (i *IPConfigurationStatus) Equals(o IPConfigurationStatus) bool {
 	if i.PodInfo != nil && o.PodInfo != nil {
@@ -107,6 +109,7 @@ func (i *IPConfigurationStatus) String() string {
 // a struct that has public fields for the original struct's private fields,
 // embed the original struct in an anonymous struct as the alias type, and then
 // let the default marshaller do its magic.
+//
 //nolint:gocritic // ignore hugeParam it's a value receiver on purpose
 func (i IPConfigurationStatus) MarshalJSON() ([]byte, error) {
 	type alias IPConfigurationStatus
@@ -283,11 +286,6 @@ type IpamPoolMonitorStateSnapshot struct {
 	CachedNNC                v1alpha.NodeNetworkConfig
 }
 
-type HomeAzInfo struct {
-	HomeAz     string
-	DcmtRegion string
-}
-
 // Response describes generic response from CNS.
 type Response struct {
 	ReturnCode types.ResponseCode
@@ -343,5 +341,5 @@ type NmAgentSupportedApisResponse struct {
 
 type GetHomeAzInfoResponse struct {
 	Response   Response
-	HomeAzInfo HomeAzInfo
+	HomeAzInfo nma.HomeAzInfo
 }

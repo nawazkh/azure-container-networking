@@ -282,3 +282,29 @@ func (g GetNetworkConfigRequest) Validate() error {
 	}
 	return err
 }
+
+var _ Request = &GetHomeAzInfoRequest{}
+
+type GetHomeAzInfoRequest struct{}
+
+// Body is a no-op method to satisfy the Request interface while indicating
+// that there is no body for a GetHomeAzInfo Request.
+func (s *GetHomeAzInfoRequest) Body() (io.Reader, error) {
+	return nil, nil
+}
+
+// Method indicates that GetHomeAzInfo requests are GET requests.
+func (s *GetHomeAzInfoRequest) Method() string {
+	return http.MethodGet
+}
+
+// Path returns the necessary URI path for invoking a GetHomeAzInfo request.
+func (s *GetHomeAzInfoRequest) Path() string {
+	return "/GetHomeAzInfo"
+}
+
+// Validate is a no-op method because GetHomeAzInfoRequest have no parameters,
+// and therefore can never be invalid.
+func (s *GetHomeAzInfoRequest) Validate() error {
+	return nil
+}

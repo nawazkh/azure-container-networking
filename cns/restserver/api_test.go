@@ -1272,7 +1272,9 @@ func startService() error {
 	}
 
 	nmagentClient := &fakes.NMAgentClientFake{}
-	service, err = NewHTTPRestService(&config, &fakes.WireserverClientFake{}, nmagentClient, nil)
+	service, err = NewHTTPRestService(&config, &fakes.WireserverClientFake{}, NmagentMultiClient{
+		OldClient: nmagentClient,
+	}, nil)
 	if err != nil {
 		return err
 	}
@@ -1311,6 +1313,10 @@ func startService() error {
 			resp.Containers = append(resp.Containers, nmagent.ContainerInfo{Version: "0", NetworkContainerID: cs})
 		}
 		return resp, nil
+	}
+
+	nmagentClient.GetNmAgentSupportedApisFunc = func(httpc *http.Client, getNmAgentSupportedApisURL string) ([]string, error) {
+		return []string{}, nil
 	}
 
 	if service != nil {
