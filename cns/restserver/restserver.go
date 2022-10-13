@@ -7,8 +7,6 @@ import (
 	"sync"
 	"time"
 
-	nma "github.com/Azure/azure-container-networking/nmagent"
-
 	"github.com/Azure/azure-container-networking/cns"
 	"github.com/Azure/azure-container-networking/cns/common"
 	"github.com/Azure/azure-container-networking/cns/dockerclient"
@@ -21,6 +19,7 @@ import (
 	"github.com/Azure/azure-container-networking/cns/types/bounded"
 	"github.com/Azure/azure-container-networking/cns/wireserver"
 	acn "github.com/Azure/azure-container-networking/common"
+	nma "github.com/Azure/azure-container-networking/nmagent"
 	"github.com/Azure/azure-container-networking/store"
 	"github.com/pkg/errors"
 )
