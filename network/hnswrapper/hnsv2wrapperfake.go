@@ -477,6 +477,20 @@ func (fEndpoint *FakeHostComputeEndpoint) PrettyString() string {
 }
 
 func (fEndpoint *FakeHostComputeEndpoint) GetHCNObj() *hcn.HostComputeEndpoint {
+	acls := make([]hcn.EndpointPolicy, 0)
+	for _, acl := range fEndpoint.Policies {
+		rawSettings, err := json.Marshal(acl)
+		if err != nil {
+			fmt.Printf("FakeHostComputeEndpoint: error marshalling ACL: %+v. err: %s\n", acl, err.Error())
+			continue
+		}
+		policy := hcn.EndpointPolicy{
+			Type:     hcn.ACL,
+			Settings: rawSettings,
+		}
+		acls = append(acls, policy)
+	}
+
 	return &hcn.HostComputeEndpoint{
 		Id:                 fEndpoint.ID,
 		Name:               fEndpoint.Name,
@@ -486,8 +500,7 @@ func (fEndpoint *FakeHostComputeEndpoint) GetHCNObj() *hcn.HostComputeEndpoint {
 				IpAddress: fEndpoint.IPConfiguration,
 			},
 		},
-		// FIXME transfer policies with JSON marshalling
-		Policies: []hcn.EndpointPolicy{},
+		Policies: acls,
 	}
 }
 
