@@ -21,6 +21,5 @@ type Tag struct {
 }
 
 type HomeAzInfo struct {
-	HomeAz     string
-	DcmtRegion string
+	HomeAz string
 }

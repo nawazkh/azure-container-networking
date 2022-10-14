@@ -443,7 +443,7 @@ func TestNMAgentSupportedAPIs(t *testing.T) {
 	}{
 		{
 			"happy path",
-			nmagent.HomeAzInfo{HomeAz: "az01", DcmtRegion: "uswest2"},
+			nmagent.HomeAzInfo{HomeAz: "az01"},
 			"/machine/plugins/?comp=nmagent&type=GetHomeAzInfo",
 			map[string]interface{}{
 				"httpStatusCode": "200",
