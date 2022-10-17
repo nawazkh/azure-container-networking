@@ -154,6 +154,23 @@ func (c *Client) DeleteNetworkContainer(ctx context.Context, dcr DeleteContainer
 	return nil
 }
 
+func (c *Client) RegisterNodeStandAlone(ctx context.Context, rnr RegisterNodeStandAloneRequest) error {
+	req, err := c.buildRequest(ctx, &rnr)
+	if err != nil {
+		return errors.Wrap(err, "building request")
+	}
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "submitting request")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return die(resp.StatusCode, resp.Header, resp.Body)
+	}
+	return nil
+}
+
 func die(code int, headers http.Header, body io.ReadCloser) error {
 	// nolint:errcheck // make a best effort to return whatever information we can
 	// returning an error here without the code and source would

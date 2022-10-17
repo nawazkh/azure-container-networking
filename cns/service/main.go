@@ -45,6 +45,7 @@ import (
 	"github.com/Azure/azure-container-networking/crd/nodenetworkconfig"
 	"github.com/Azure/azure-container-networking/crd/nodenetworkconfig/api/v1alpha"
 	"github.com/Azure/azure-container-networking/log"
+	nma "github.com/Azure/azure-container-networking/nmagent"
 	"github.com/Azure/azure-container-networking/platform"
 	"github.com/Azure/azure-container-networking/processlock"
 	localtls "github.com/Azure/azure-container-networking/server/tls"
@@ -463,6 +464,18 @@ func main() {
 		os.Exit(0)
 	}
 
+	// create an NMAgent Client
+	newNmaClient, err := nma.NewClient(nma.Config{
+		Host: "168.63.129.16", // wireserver
+
+		// nolint:gomnd // there's no benefit to constantizing a well-known port
+		Port: 80,
+	})
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	if !telemetryEnabled {
 		logger.Errorf("[Azure CNS] Cannot disable telemetry via cmdline. Update cns_config.json to disable telemetry.")
 	}
@@ -546,6 +559,11 @@ func main() {
 		return
 	}
 
+	nmagentClients := restserver.NmagentMultiClient{
+		OldClient: nmaclient,
+		NewClient: newNmaClient,
+	}
+
 	// Initialize endpoint state store if cns is managing endpoint state.
 	if cnsconfig.ManageEndpointState {
 		log.Printf("[Azure CNS] Configured to manage endpoints state")
@@ -572,7 +590,7 @@ func main() {
 
 	// Create CNS object.
 
-	httpRestService, err := restserver.NewHTTPRestService(&config, &wireserver.Client{HTTPClient: &http.Client{}}, nmaclient, endpointStateStore)
+	httpRestService, err := restserver.NewHTTPRestService(&config, &wireserver.Client{HTTPClient: &http.Client{}}, nmagentClients, endpointStateStore)
 	if err != nil {
 		logger.Errorf("Failed to create CNS object, err:%v.\n", err)
 		return

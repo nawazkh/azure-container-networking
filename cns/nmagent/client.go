@@ -11,8 +11,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/Azure/azure-container-networking/cns"
-
 	"github.com/Azure/azure-container-networking/cns/logger"
 	"github.com/Azure/azure-container-networking/common"
 	"github.com/pkg/errors"
@@ -21,7 +19,6 @@ import (
 const (
 	// GetNmAgentSupportedApiURLFmt Api endpoint to get supported Apis of NMAgent
 	GetNmAgentSupportedApiURLFmt       = "http://%s/machine/plugins/?comp=nmagent&type=GetSupportedApis"
-	RegisterNodeURLFmt                 = "http://%s/machine/plugins/?comp=nmagent&type=RegisterNode"
 	GetNetworkContainerVersionURLFmt   = "http://%s/machine/plugins/?comp=nmagent&type=NetworkManagement/interfaces/%s/networkContainers/%s/version/authenticationToken/%s/api-version/1"
 	GetNcVersionListWithOutTokenURLFmt = "http://%s/machine/plugins/?comp=nmagent&type=NetworkManagement/interfaces/api-version/%s"
 	JoinNetworkURLFmt                  = "NetworkManagement/joinedVirtualNetworks/%s/api-version/1"
@@ -266,28 +263,4 @@ func (c *Client) GetNCVersionList(ctx context.Context) (*NetworkContainerListRes
 		return nil, errors.Wrap(err, "failed to unmarshal response")
 	}
 	return &response, nil
-}
-
-// RegisterNode calls nmagent to create nc context selector.
-func (c *Client) RegisterNode(request *cns.RegisterNodeRequest) (*http.Response, error) {
-	var returnErr error
-	registerNodeAPIURL := fmt.Sprintf(RegisterNodeURLFmt, WireserverIP)
-	httpClient := common.GetHttpClient()
-
-	var body bytes.Buffer
-	if err := json.NewEncoder(&body).Encode(request); err != nil {
-		returnErr = errors.Wrap(err, "registerNode failed to decode repsonse body")
-		logger.Errorf("[Azure-CNS]%v", returnErr)
-		return nil, returnErr
-	}
-
-	resp, err := common.PostCtx(context.TODO(), httpClient, registerNodeAPIURL, "application/json", &body)
-	if err != nil {
-		returnErr = errors.Wrap(err, "[NMAgentClient] failed to make nmagent request in registering node")
-		logger.Errorf("[Azure-CNS] %v", returnErr)
-		return nil, returnErr
-	}
-
-	logger.Printf("[NMAgentClient][Response] RegisterNode. Response: %+v.", resp)
-	return resp, nil
 }
